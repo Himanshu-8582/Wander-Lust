@@ -9,7 +9,6 @@ const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
 const { listingSchema, reviewSchema} = require("./schema.js");
 const Review = require("./models/review.js");
-const review = require("./models/review.js");
 
 
 app.set("views", path.join(__dirname, "views"));
@@ -37,7 +36,7 @@ app.get("/", (req, res) => {
     res.send("Hi, I am root");
 });
 
-const validateListing = (req, res, next) => {
+const validateListing = (req, res, next) => {              //validation Method for Creating and Updating listings
     let {error} = listingSchema.validate(req.body);
     if (error) {
         let errMsg = error.details.map((el) => el.message).join(",");
@@ -45,7 +44,7 @@ const validateListing = (req, res, next) => {
     } else next();
 }
 
-const validateReview = (req, res, next) => {
+const validateReview = (req, res, next) => {               //validation Method for Creating reviews
     let {error} = reviewSchema.validate(req.body);
     if (error) {
         let errMsg = error.details.map((el) => el.message).join(",");
@@ -65,7 +64,7 @@ app.get("/listings/new", (req, res) => {                  // New Route
 
 app.get("/listings/:id", wrapAsync(async (req, res) => {            // Show Route
     let { id } = req.params;
-    const listing = await Listing.findById(id);
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
 }));
 
@@ -112,7 +111,7 @@ app.post("/listings/:id/reviews", validateReview, wrapAsync(async (req, res) => 
     let listing = await Listing.findById(req.params.id);
     let newReview = new Review(req.body.review);
 
-    listing.reviews.push(newReview);
+    listing.reviews.push(newReview);        // Syntax to add reviws obj inside listing.review array
 
     await newReview.save();
     await listing.save();
@@ -121,11 +120,19 @@ app.post("/listings/:id/reviews", validateReview, wrapAsync(async (req, res) => 
     res.redirect(`/listings/${listing.id}`);
 }));
 
-app.all("*", (req, res, next) => {
+// Delete review Route
+app.delete("/listings/:id/reviews/:reviewId", wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews : reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/listings/${id}`);
+}))
+
+app.all("*", (req, res, next) => {       //MiddleWare
     next(new ExpressError(404, "Page Not Found!"));
 })
 
-app.use((err, erq, res, next) => {
+app.use((err, erq, res, next) => {       //MiddleWare we use it for error handling     
     let { statusCode=500, message="Something went wrong" } = err;
     // res.send("Something went wrong");
     res.status(statusCode).render("error.ejs", { message });
