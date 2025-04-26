@@ -7,10 +7,13 @@ const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user.js");
 
-const listings = require("./routes/listing.js");
-const reviews = require("./routes/review.js");
-
+const listingsRouter = require("./routes/listing.js");
+const reviewsRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -45,10 +48,15 @@ const sessionOptions = {
     }
 }
 
-app.use(session(sessionOptions));
+app.use(session(sessionOptions));     // We always use passport after using sessions
 app.use(flash());                     //We use flash using routes So we need to use flash first
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());   //Serialize users into the session (stores in the session)
+passport.deserializeUser(User.deserializeUser());   // opposite of deserialization
 
-  // ROUTES 
+// ROUTES 
 app.get("/", (req, res) => {
     res.send("Hi, I am root");
 });
@@ -56,11 +64,22 @@ app.get("/", (req, res) => {
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
+    res.locals.currUser = req.user;
     next();
 });
 
-app.use("/listings", listings);   // We can import all routes using router ("./routes/listing.js")
-app.use("/listings/:id/reviews", reviews);     // We can import all routes using router (""/listings/:id/reviews"")
+// app.get("/demouser", async (req, res) => {
+//     let fakeuser = new User({
+//         email: "student@gmail.com",
+//         username: "delta-student",
+//     });
+//     let registerUser=await User.register(fakeuser, "helloworld");    // Here helloworld is a password
+//     res.send(registerUser);
+// })
+
+app.use("/listings", listingsRouter);   // We can import all routes using router ("./routes/listing.js")
+app.use("/listings/:id/reviews", reviewsRouter);     // We can import all routes using router (""/listings/:id/reviews"")
+app.use("/", userRouter);
 
 
 //MiddleWares
