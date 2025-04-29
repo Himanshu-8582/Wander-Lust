@@ -1,3 +1,8 @@
+if (process.env.NODE_ENV != "production") {
+    require("dotenv").config();
+}
+// console.log(process.env.SECRET);
+
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
@@ -68,14 +73,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// app.get("/demouser", async (req, res) => {
-//     let fakeuser = new User({
-//         email: "student@gmail.com",
-//         username: "delta-student",
-//     });
-//     let registerUser=await User.register(fakeuser, "helloworld");    // Here helloworld is a password
-//     res.send(registerUser);
-// })
 
 app.use("/listings", listingsRouter);   // We can import all routes using router ("./routes/listing.js")
 app.use("/listings/:id/reviews", reviewsRouter);     // We can import all routes using router (""/listings/:id/reviews"")
