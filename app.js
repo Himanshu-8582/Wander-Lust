@@ -62,9 +62,9 @@ passport.serializeUser(User.serializeUser());   //Serialize users into the sessi
 passport.deserializeUser(User.deserializeUser());   // opposite of deserialization
 
 // ROUTES 
-app.get("/", (req, res) => {
-    res.send("Hi, I am root");
-});
+// app.get("/", (req, res) => {
+//     res.send("Hi, I am root");
+// });
 
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
